@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Smart Lead Time Calculator — T&A Critical Path</title>
+
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/icon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/icon-180.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#060b1a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="T&A Calc">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">T&A</div>
+      <div>
+        <div class="brand-title">Smart Lead Time Calculator</div>
+        <div class="brand-sub">Order Due ↔ Customer Delivery critical path</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="status-pill"><span class="status-dot"></span><span id="statusIndicator">Ready</span></div>
+    <select id="dateFormat" class="fmt"></select>
+    <button id="btnReset" class="btn-danger btn-sm">Reset to defaults</button>
+  </div>
+
+  <div class="shell">
+    <!-- ================= MAIN ================= -->
+    <div>
+      <div class="tabnav">
+        <button class="tab-btn active" data-tab="calc">T&amp;A Planner</button>
+        <button class="tab-btn" data-tab="seasons">Seasonal overview</button>
+      </div>
+
+      <!-- CALCULATOR TAB -->
+      <div class="tab-panel active" id="tab-calc">
+
+        <div class="card accent-top">
+          <div class="card-head">
+            <div class="card-title"><span class="swatch"></span>Scenario A &amp; B — Order Due or CDD</div>
+            <button id="btnCalc" class="btn-primary btn-sm">Calculate all</button>
+          </div>
+          <div class="scen-grid">
+            <div class="scen-box">
+              <span class="tag">SCENARIO A</span>
+              <label class="field-label">Reference date</label>
+              <input type="date" id="scenA_date">
+              <label class="field-label" style="margin-top:8px">Direction</label>
+              <select id="scenA_type">
+                <option value="forward">Order Due → Forward</option>
+                <option value="backward">CDD → Backward</option>
+              </select>
+            </div>
+            <div class="scen-box">
+              <span class="tag" style="background:var(--bd-soft);color:#9df3de;">SCENARIO B (optional)</span>
+              <label class="field-label">Reference date</label>
+              <input type="date" id="scenB_date">
+              <label class="field-label" style="margin-top:8px">Direction</label>
+              <select id="scenB_type">
+                <option value="forward">Order Due → Forward</option>
+                <option value="backward">CDD → Backward</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="resA" style="margin-top:16px;"></div>
+          <div style="height:14px;"></div>
+          <div id="resB"></div>
+        </div>
+
+        <div class="card accent-top">
+          <div class="card-head">
+            <div class="card-title"><span class="swatch" style="background:var(--cn)"></span>Scenario C &amp; D — Middle-out from Garments ETD or ETA</div>
+          </div>
+          <div class="scen-grid">
+            <div class="scen-box">
+              <span class="tag" style="background:var(--cn-soft);color:var(--cn);">SCENARIO C</span>
+              <label class="field-label">Garments ETD (Ex-BD)</label>
+              <input type="date" id="scenC_date">
+            </div>
+            <div class="scen-box">
+              <span class="tag" style="background:var(--sd-soft);color:#ddd0ff;">SCENARIO D (optional)</span>
+              <label class="field-label">ETA USA</label>
+              <input type="date" id="scenD_date">
+              <div class="footer-note" style="margin-top:8px;">Use when the USA team needs T&amp;A pinned to a fixed ETA — everything else is worked backward from it.</div>
+            </div>
+          </div>
+          <div id="resC" style="margin-top:16px;"></div>
+          <div style="height:14px;"></div>
+          <div id="resD"></div>
+        </div>
+
+      </div>
+
+      <!-- SEASONAL TAB -->
+      <div class="tab-panel" id="tab-seasons">
+        <div class="card accent-top">
+          <div class="card-head">
+            <div class="card-title"><span class="swatch" style="background:var(--bd)"></span>Seasonal critical path overview (active)</div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-sm" onclick="copySeasonTable()">📋 Copy table</button>
+              <button id="btnRefreshSeasons" class="btn-sm">Refresh</button>
+            </div>
+          </div>
+          <div style="max-height:560px; overflow:auto;">
+            <table id="tblSeasons">
+              <thead><tr>
+                <th>Season</th><th>CDD</th><th>ETA</th><th>Ex-BD ETD</th>
+                <th>Fabric in-house</th><th>Fabric ETD</th><th>Order due</th><th>Remarks</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card accent-top">
+          <div class="card-head">
+            <div class="card-title"><span class="swatch" style="background:var(--cn)"></span>Smart checks</div>
+            <div class="eyebrow">Rule-based, not AI</div>
+          </div>
+          <div id="smartChecksBox"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================= SIDEBAR ================= -->
+    <div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title"><span class="swatch"></span>Configuration</div>
+          <div class="eyebrow">Live</div>
+        </div>
+        <div class="sidenav">
+          <button class="side-btn active" data-side="settings">Lead times</button>
+          <button class="side-btn" data-side="presets">Sourcing profiles</button>
+          <button class="side-btn" data-side="holidays">Holidays</button>
+          <button class="side-btn" data-side="seasons">Seasons</button>
+          <button class="side-btn" data-side="archives">Archives</button>
+        </div>
+
+        <!-- SETTINGS -->
+        <div class="side-panel active" id="side-settings">
+          <div class="origin-toggle">
+            <div class="sel-cn" id="btnOriginCN">🇨🇳 China (CN)</div>
+            <div class="sel-bd" id="btnOriginBD">🇧🇩 Local (BD)</div>
+          </div>
+          <div class="lead-row"><label>Order Due → Fabric ETD</label><input type="number" id="lt1"></div>
+          <div class="lead-row"><label>Fabric ETD → Fabric in-house</label><input type="number" id="lt2"></div>
+          <div class="lead-row"><label>Fabric in-house → Garments ETD</label><input type="number" id="lt3"></div>
+          <div class="lead-row"><label>Garments ETD → ETA USA</label><input type="number" id="lt4"></div>
+          <div class="lead-row"><label>ETA USA → CDD</label><input type="number" id="lt5"></div>
+          <button id="btnSaveLeads" class="btn-primary btn-block btn-sm" style="margin-top:12px;">Save lead times</button>
+        </div>
+
+        <!-- PRESETS (new) -->
+        <div class="side-panel" id="side-presets">
+          <div class="footer-note" style="margin-bottom:10px;">A sourcing profile stores just the 5 lead times + Fabric Origin under a name — e.g. per fabric type, vendor, or program. Set up the numbers on the <b>Lead times</b> tab, then save them here. Loading a profile instantly swaps the active lead times so the T&amp;A Planner recalculates against that sourcing plan — holidays and seasonal dates are untouched.</div>
+          <div class="add-row">
+            <input type="text" id="presetName" placeholder="e.g. Woven Fabric - China">
+            <button id="btnSavePreset" class="btn-sm">Save current lead times</button>
+          </div>
+          <div id="listPresets"></div>
+        </div>
+
+        <!-- HOLIDAYS -->
+        <div class="side-panel" id="side-holidays">
+          <div class="add-row">
+            <input type="text" id="holName" placeholder="Name (e.g. CNY)">
+            <select id="holZone" style="max-width:90px;"><option value="BD">BD</option><option value="CN">CN</option></select>
+          </div>
+          <div class="add-row">
+            <input type="date" id="holFrom">
+            <input type="date" id="holTo">
+            <button id="btnAddHol" class="btn-sm">Add</button>
+          </div>
+          <div class="eyebrow" style="margin:10px 0 6px;">Ranges</div>
+          <div id="listRanges"></div>
+          <details class="detail-toggle">
+            <summary>View all expanded holiday dates</summary>
+            <div id="listDates" style="margin-top:6px; max-height:140px; overflow:auto;" class="footer-note"></div>
+          </details>
+        </div>
+
+        <!-- SEASONS -->
+        <div class="side-panel" id="side-seasons">
+          <div class="footer-note" style="margin-bottom:8px;">Generator fills the 25th of each month for the given year.</div>
+          <div class="add-row">
+            <input type="number" id="genYear" placeholder="2027">
+            <button id="btnGenTemplate" class="btn-sm">Generate</button>
+          </div>
+          <div id="divSeasonsInputs" class="season-grid" style="margin-top:10px;"></div>
+          <button id="btnSaveSeasons" class="btn-sm btn-block" style="margin-top:10px;">Save seasons</button>
+        </div>
+
+        <!-- ARCHIVES -->
+        <div class="side-panel" id="side-archives">
+          <div class="footer-note" style="margin-bottom:10px;">Archives snapshot the full configuration — lead times, holidays and seasonal dates together — useful for switching between planning years.</div>
+          <div class="add-row">
+            <input type="text" id="archName" placeholder="Name (e.g. 2027 Config)">
+            <button id="btnArchSave" class="btn-primary btn-sm">Archive current</button>
+          </div>
+          <div id="listArchives" style="margin-top:8px;"></div>
+
+          <div class="eyebrow" style="margin:14px 0 6px;">Backup (whole device)</div>
+          <div class="footer-note" style="margin-bottom:8px;">Everything above lives only in this browser. Export a backup file before clearing your cache or switching devices, and import it to restore or move to a colleague's machine.</div>
+          <div class="backup-row">
+            <button id="btnExportConfig" class="btn-sm">⬇ Export config</button>
+            <button class="btn-sm" onclick="document.getElementById('fileImportConfig').click()">⬆ Import config</button>
+          </div>
+          <input type="file" id="fileImportConfig" class="file-input-hidden" accept="application/json">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="margin-bottom:8px;"><span class="swatch" style="background:var(--muted-2)"></span>How this works</div>
+        <div class="footer-note">
+          <b>Fabric Origin</b> decides which regional calendar (CN or BD) governs fabric production days.<br>
+          <b>Production phases</b> skip holidays so factories always keep their full working-day allotment.<br>
+          <b>Garments ETD</b> always snaps to a Sunday sailing day, and steps 7 days clear of any Eid.<br>
+          <b>Fabric In-house</b> avoids Friday, Saturday and BD holidays.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-footer">Developed by Musfikur Rahman | Copyright &copy; 2026</div>
+
+  <div id="toast"></div>
+
+<script src="utils.js"></script>
+<script src="storage.js"></script>
+<script src="holiday.js"></script>
+<script src="scenario.js"></script>
+<script src="season.js"></script>
+<script src="export.js"></script>
+<script src="ai.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

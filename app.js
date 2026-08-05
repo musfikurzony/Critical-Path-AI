@@ -123,10 +123,14 @@ window.addEventListener('DOMContentLoaded', () => {
 
 /* ---------- PWA: best-effort offline caching ---------- */
 // Silently does nothing if the hosting context doesn't allow it — safe either way.
+// Errors are logged to the console only (never shown to the user) so this can be
+// debugged via DevTools > Console / Application > Service Workers if needed.
 (function registerServiceWorker(){
   try{
     if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
-      navigator.serviceWorker.register('./sw.js').catch(()=>{});
+      navigator.serviceWorker.register('./sw.js')
+        .then((reg) => console.log('[SW] registered, scope:', reg.scope))
+        .catch((err) => console.warn('[SW] registration failed:', err));
     }
-  } catch(e){ /* not supported here — safe to ignore */ }
+  } catch(e){ console.warn('[SW] not supported in this context:', e); }
 })();

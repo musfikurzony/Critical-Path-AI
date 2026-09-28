@@ -246,3 +246,7 @@
 .backup-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
 .backup-row button{ flex:1; }
 .file-input-hidden{ display:none; }
+
+.origin-badge{ margin-left:8px; font-size:9.5px; font-weight:700; padding:2px 7px; border-radius:5px; text-transform:none; letter-spacing:0; vertical-align:middle; }
+.origin-badge.cn{ background:var(--cn-soft); color:var(--cn); }
+.origin-badge.bd{ background:var(--bd-soft); color:var(--bd); }

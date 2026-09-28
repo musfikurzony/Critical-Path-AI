@@ -138,7 +138,7 @@ function renderResult(id, res, label, accentClass){
   window.taResults[label] = res;
   const headerHtml = `
     <div class="ta-header ${accentClass}">
-      <span>T&amp;A — Scenario ${label}</span>
+      <span>T&amp;A — Scenario ${label} <span class="origin-badge ${(G.leadTimes.origin||'CN')==='BD'?'bd':'cn'}">Fabric: ${(G.leadTimes.origin||'CN')==='BD' ? 'Bangladesh (CN holidays not applied)' : 'China (CN holidays applied)'}</span></span>
       ${res ? `<button class="btn-copy" onclick="copyTA('${label}')">📋 Copy T&amp;A</button>` : ''}
     </div>`;
   if(!res){ div.innerHTML = headerHtml + '<div class="ta-body"><div class="empty-note">Enter a date above and click "Calculate all".</div></div>'; return; }

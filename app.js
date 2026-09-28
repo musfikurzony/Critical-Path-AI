@@ -9,6 +9,41 @@ function renderUI(){
   renderSeasonsInputUI();   // season.js
   renderSeasonalTableUI();  // season.js (also triggers ai.js smart checks)
   renderArchivesUI();       // storage.js
+  recalcAll(true);          // keep T&A results in sync with the active config
+}
+
+/* Recalculate every scenario that has a date. quiet=true only refreshes
+   scenarios that already have inputs (used after any settings change). */
+function recalcAll(quiet){
+  const ad=$('scenA_date').value, at=$('scenA_type').value;
+  const bd=$('scenB_date').value, bt=$('scenB_type').value;
+  const cd=$('scenC_date').value;
+  const dd=$('scenD_date').value;
+  renderResult('resA', ad ? runCalc(ad, at) : null, 'A', 'acc-a');
+  renderResult('resB', bd ? runCalc(bd, bt) : null, 'B', 'acc-b');
+  renderResult('resC', cd ? runCalc(cd, 'garments') : null, 'C', 'acc-c');
+  renderResult('resD', dd ? runCalc(dd, 'eta') : null, 'D', 'acc-d');
+}
+
+/* Read the lead-time form into G and apply it immediately. */
+function applyLeadInputs(){
+  G.leadTimes = {
+    orderToFabricETD: Number($('lt1').value),
+    fabricETDToInhouse: Number($('lt2').value),
+    inhouseToGarmentsETD: Number($('lt3').value),
+    garmentsETDToETA: Number($('lt4').value),
+    etaToCDD: Number($('lt5').value),
+    origin: $('btnOriginCN').classList.contains('on') ? 'CN' : 'BD'
+  };
+  saveData(); renderUI();
+}
+
+/* Fabric origin switch: applies instantly (no Save needed) */
+function setOrigin(zone){
+  $('btnOriginCN').classList.toggle('on', zone==='CN');
+  $('btnOriginBD').classList.toggle('on', zone==='BD');
+  applyLeadInputs();
+  toast(zone==='CN' ? 'Fabric origin: China — CN holidays (CNY, Golden Week) apply to fabric' : 'Fabric origin: Bangladesh — CN holidays ignored, BD holidays apply to fabric');
 }
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -37,35 +72,19 @@ window.addEventListener('DOMContentLoaded', () => {
     };
   });
 
-  $('btnOriginCN').onclick = () => { $('btnOriginCN').classList.add('on'); $('btnOriginBD').classList.remove('on'); };
-  $('btnOriginBD').onclick = () => { $('btnOriginBD').classList.add('on'); $('btnOriginCN').classList.remove('on'); };
+  $('btnOriginCN').onclick = () => setOrigin('CN');
+  $('btnOriginBD').onclick = () => setOrigin('BD');
+  ['lt1','lt2','lt3','lt4','lt5'].forEach(id => $(id).addEventListener('change', applyLeadInputs));
 
   $('btnReset').onclick = () => { if(confirm('Reset all data to 2026 defaults? This clears custom holidays, seasons and lead times.')) resetToDefault(); };
 
   $('btnCalc').onclick = () => {
-    const ad=$('scenA_date').value, at=$('scenA_type').value;
-    const bd=$('scenB_date').value, bt=$('scenB_type').value;
-    const cd=$('scenC_date').value;
-    const dd=$('scenD_date').value;
-    renderResult('resA', ad ? runCalc(ad, at) : null, 'A', 'acc-a');
-    renderResult('resB', bd ? runCalc(bd, bt) : null, 'B', 'acc-b');
-    renderResult('resC', cd ? runCalc(cd, 'garments') : null, 'C', 'acc-c');
-    renderResult('resD', dd ? runCalc(dd, 'eta') : null, 'D', 'acc-d');
+    recalcAll();
     $('statusIndicator').textContent = 'Calculated';
     setTimeout(()=> $('statusIndicator').textContent = 'Ready', 1800);
   };
 
-  $('btnSaveLeads').onclick = () => {
-    G.leadTimes = {
-      orderToFabricETD: Number($('lt1').value),
-      fabricETDToInhouse: Number($('lt2').value),
-      inhouseToGarmentsETD: Number($('lt3').value),
-      garmentsETDToETA: Number($('lt4').value),
-      etaToCDD: Number($('lt5').value),
-      origin: $('btnOriginCN').classList.contains('on') ? 'CN' : 'BD'
-    };
-    saveData(); renderUI(); toast('Lead times saved');
-  };
+  $('btnSaveLeads').onclick = () => { applyLeadInputs(); toast('Lead times saved'); };
 
   $('btnAddHol').onclick = () => {
     const n=$('holName').value, z=$('holZone').value, f=$('holFrom').value, t=$('holTo').value;

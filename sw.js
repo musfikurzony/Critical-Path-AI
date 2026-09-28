@@ -3,7 +3,7 @@
    request fails the WHOLE cache silently), which is very likely why offline
    wasn't working. Each file is now cached individually with allSettled, and
    navigation requests fall back explicitly to index.html when offline. */
-const CACHE_NAME = 'sltc-shell-v2';
+const CACHE_NAME = 'sltc-shell-v3';
 const SHELL_FILES = [
   './index.html',
   './styles.css',
